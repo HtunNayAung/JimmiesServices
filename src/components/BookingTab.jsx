@@ -141,9 +141,11 @@ export default function BookingsTab({ token, isProvider, onChat }) {
     }
   };
   const filteredBookings = activeTab === 'ALL' 
-    ? bookings 
-    : bookings.filter(b => b.status === activeTab);
-
+    ? [...bookings].sort((a, b) => new Date(a.localDate) - new Date(b.localDate))
+    : [...bookings]
+        .filter(b => b.status === activeTab)
+        .sort((a, b) => new Date(b.localDate) - new Date(a.localDate));
+  
   return (
     <div className="max-w-5xl mx-auto p-6">
       {!selectedBooking ? (

@@ -19,19 +19,19 @@ import 'react-clock/dist/Clock.css';
 import NotificationsTab from '../components/NotificationTab';
 import BookingsTab from '../components/BookingTab';
 import ChatTab from '../components/ChatTab';
+import EditListingForm from '../components/EditListingForm';
 
 export default function ProviderDashboard() {
 
   const { token, setToken } = useAuth();
   const username = token?.split('|')[0];
-  const providerId = token?.split('|')[1]; // safely splits and gets the ID
+  const providerId = token?.split('|')[1]; 
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [listings, setListings] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editingListingId, setEditingListingId] = useState(null);
   const [selectedListing, setSelectedListing] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [newListing, setNewListing] = useState({
     serviceName: '',
     location: '',
@@ -86,12 +86,14 @@ export default function ProviderDashboard() {
 
   // Service Creation
   const handleFormSubmit = async () => {
+
+    console.log("Submit is called")
     if (!token) {
       console.error('No token available.');
       return;
     }
   
-    const providerId = token.split('|')[1];
+    
   
     // Format availability
     const filteredAvailability = Object.entries(newListing.availability).reduce(
@@ -109,52 +111,28 @@ export default function ProviderDashboard() {
     try {
       setIsSubmitting(true);
   
-      if (!editMode) {
-        // ✅ CREATE: POST to /serviceListings
-        const payload = {
-          serviceProviderId: providerId,
-          serviceName: newListing.serviceName,
-          location: newListing.location,
-          pricePerHour: parseFloat(newListing.pricePerHour),
-          description: newListing.description,
-          availability: {
-            availability: filteredAvailability,
-          },
-        };
-  
-        await axios.post(`${baseURL}/serviceListings`, payload, {
-          headers: {
-            'X-LOGIN-TOKEN': token,
-            'Content-Type': 'application/json',
-          },
-        });
-      } else {
-        console.log("Edit Mode", newListing)
-        const payload = {
-          serviceProviderId: providerId,
-          serviceName: newListing.serviceName,
-          location: newListing.location,
-          pricePerHour: parseFloat(newListing.pricePerHour),
-          description: newListing.description,
-          availability: {
-            availability: filteredAvailability,
-          },
-        };
 
-        await axios.put(
-          `${baseURL}/serviceListings/update?serviceListingId=${editingListingId}`,
-          payload,
-          {
-            headers: {
-              'X-LOGIN-TOKEN': token,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+      // ✅ CREATE: POST to /serviceListings
+      const payload = {
+        serviceProviderId: providerId,
+        serviceName: newListing.serviceName,
+        location: newListing.location,
+        pricePerHour: parseFloat(newListing.pricePerHour),
+        description: newListing.description,
+        availability: {
+          availability: filteredAvailability,
+        },
+      };
 
-        
-      }
-  
+      const response = await axios.post(`${baseURL}/serviceListings`, payload, {
+        headers: {
+          'X-LOGIN-TOKEN': token,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log(response);
+      
+
       // ✅ Refresh listings
       const refreshed = await axios.get(`${baseURL}/serviceListingsGets/provider`, {
         headers: { 'X-LOGIN-TOKEN': token },
@@ -162,7 +140,6 @@ export default function ProviderDashboard() {
   
       setListings(refreshed.data);
       setShowForm(false);
-      setEditMode(false);
       setEditingListingId(null);
       setSelectedListing(null);
   
@@ -193,67 +170,43 @@ export default function ProviderDashboard() {
     setSelectedMenu('chat');
   };
   
-
-  // Service Editing
   const handleEdit = (listing) => {
-    console.log(listing.serviceListingId, "listing")
-    const filledAvailability = listing.availability?.availability || {};
-  
-    // Normalize to full week
-    const fullAvailability = { ...defaultWeek };
-    for (const [day, time] of Object.entries(filledAvailability)) {
-      fullAvailability[day.toLowerCase()] = time;
-    }
-  
-    setNewListing({
-      serviceName: listing.serviceName,
-      location: listing.location,
-      pricePerHour: listing.pricePerHour,
-      description: listing.description,
-      availability: fullAvailability,
-    });
-  
-    setEditingListingId(listing.serviceListingId);
-    setEditMode(true);
-    setShowForm(true);
-    setSelectedListing(null);
+    setSelectedListing(listing);
+    setShowEditForm(true);
   };
 
-  // Service Deletion (THIS NEEDS TO BE IMPLEMENTED)***
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this listing? This action cannot be undone.');
-  
-    if (!confirmDelete) {
-      return;
-    }
+  const handleEditSubmit = async (updatedData) => {
     try {
       setIsSubmitting(true);
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/serviceListings/delete?serviceListingId=${id}`,
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/serviceListings/update?serviceListingId=${selectedListing.serviceListingId}`,
+        updatedData,
         {
           headers: {
             'X-LOGIN-TOKEN': token,
+            'Content-Type': 'application/json',
           },
         }
       );
 
-      // Refresh listings after delete
-      const response = await axios.get(
+      const refreshed = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/serviceListingsGets/provider`,
         {
           headers: { 'X-LOGIN-TOKEN': token },
         }
       );
-      setListings(response.data);
+
+      setListings(refreshed.data);
+      setShowEditForm(false);
       setSelectedListing(null);
-      alert('Listing deleted successfully');
     } catch (err) {
-      console.error('Failed to delete listing:', err);
+      console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Modify the listings section in the return statement
   return (
     <div>
       {/* Breadcrumb (Mobile) */}
@@ -401,7 +354,7 @@ export default function ProviderDashboard() {
 
         {selectedMenu === 'listings' && (
           <div className="p-4 sm:p-6 lg:p-8">
-            {!showForm && !selectedListing && (
+            {!showForm && !showEditForm && !selectedListing && (
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h1 className="text-2xl font-bold text-gray-800">
@@ -430,7 +383,7 @@ export default function ProviderDashboard() {
               </div>
             )}
 
-            {selectedListing && !showForm && (
+            {selectedListing && !showForm && !showEditForm && (
               <div>
                 <div className="mb-6">
                   <button
@@ -456,10 +409,22 @@ export default function ProviderDashboard() {
                 <ListingDetails
                   listing={selectedListing}
                   isProvider={true}
-                  onEdit={handleEdit}
+                  onEdit={() => setShowEditForm(true)}
                   onDelete={() => handleDelete(selectedListing.serviceListingId)}
                 />
               </div>
+            )}
+
+            {showEditForm && selectedListing && (
+              <EditListingForm
+                listing={selectedListing}
+                onSubmit={handleEditSubmit}
+                onCancel={() => {
+                  setShowEditForm(false);
+                  setSelectedListing(null);
+                }}
+                isSubmitting={isSubmitting}
+              />
             )}
 
             {showForm && (
@@ -473,7 +438,7 @@ export default function ProviderDashboard() {
                   setEditMode(false);
                   setEditingListingId(null);
                 }}
-                editMode={editMode}
+                editMode={false}
               />
             )}
           </div>
@@ -490,3 +455,4 @@ export default function ProviderDashboard() {
     </div>
   );
 }
+

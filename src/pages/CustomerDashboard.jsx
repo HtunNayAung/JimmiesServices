@@ -210,7 +210,7 @@ export default function CustomerDashboard() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                           {filteredListings.map((listing) => (
                             <ListingCard
-                              key={listing.id}
+                              key={listing.serviceListingId}
                               serviceName={listing.serviceName}
                               location={listing.location}
                               pricePerHour={listing.pricePerHour}
