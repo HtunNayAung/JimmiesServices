@@ -147,11 +147,7 @@ export default function CustomerDashboard() {
                   <Calendar className="w-4 h-4" /> My Bookings
                 </button>
               </li>
-              <li>
-                <button onClick={() => setSelectedMenu('profile')} className={`flex items-center gap-3 text-sm text-gray-800 px-2.5 py-2 rounded-lg hover:bg-gray-100 w-full text-left ${selectedMenu === 'profile' ? 'bg-gray-100' : ''}`}>
-                  <User className="w-4 h-4" /> My Profile
-                </button>
-              </li>
+              
               <li>
                 <button onClick={() => setSelectedMenu('notifications')} className={`flex items-center gap-3 text-sm text-gray-800 px-2.5 py-2 rounded-lg hover:bg-gray-100 w-full text-left ${selectedMenu === 'notifications' ? 'bg-gray-100' : ''}`}>
                   <Bell className="w-4 h-4" /> Notifications

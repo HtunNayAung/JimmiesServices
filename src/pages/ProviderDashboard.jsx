@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Plus,
   LogOut,
+  DollarSign
 } from 'lucide-react';
 import ListingCard from '../components/ListingCard';
 import ServiceListingForm from '../components/ServiceListingForm';
@@ -56,6 +57,22 @@ export default function ProviderDashboard() {
     saturday: { start: '', end: '' },
     sunday: { start: '', end: '' },
   };
+
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const oneWeekAgo = new Date(today);
+    oneWeekAgo.setDate(today.getDate() - 7);
+    
+    return {
+      start: oneWeekAgo.toISOString().split('T')[0], // 7 days ago in YYYY-MM-DD format
+      end: today.toISOString().split('T')[0] // Today in YYYY-MM-DD format
+    };
+  });
+  const [statistics, setStatistics] = useState({
+    revenue: 0,
+    bookingCount: 0
+  });
+  const [selectedServiceId, setSelectedServiceId] = useState('all'); // Default to 'all'
   
 
   useEffect(() => {
@@ -79,6 +96,63 @@ export default function ProviderDashboard() {
       fetchListings();
     }
   }, [token]);
+
+  useEffect(() => {
+    if (selectedMenu === 'dashboard' && listings.length > 0) {
+      fetchStatistics();
+    }
+  }, [selectedMenu, listings]);
+
+  const fetchStatistics = async () => {
+    try {
+      // Fetch statistics for all listings by default, or for selected service if specified
+      const targetListings = selectedServiceId && selectedServiceId !== 'all' 
+        ? [listings.find(l => l.serviceListingId === selectedServiceId)].filter(Boolean)
+        : listings;
+
+      if (targetListings.length === 0) return;
+
+      const allStats = await Promise.all(
+        targetListings.map(async (listing) => {
+          const [revenueResponse, bookingResponse] = await Promise.all([
+            axios.get(
+              `${import.meta.env.VITE_API_BASE_URL}/analysis/daily-revenue?start=${dateRange.start}&end=${dateRange.end}&serviceListingId=${listing.serviceListingId}`,
+              { headers: { 'X-LOGIN-TOKEN': token } }
+            ),
+            axios.get(
+              `${import.meta.env.VITE_API_BASE_URL}/analysis/bookingNumber?start=${dateRange.start}&end=${dateRange.end}&serviceListingId=${listing.serviceListingId}`,
+              { headers: { 'X-LOGIN-TOKEN': token } }
+            )
+          ]);
+
+          return {
+            revenue: revenueResponse.data.reduce((sum, day) => sum + (day.revenue || 0), 0),
+            bookings: bookingResponse.data.reduce((sum, day) => sum + (day.bookingNumber || 0), 0)
+          };
+        })
+      );
+
+      // Sum up all statistics
+      const totalStats = allStats.reduce(
+        (acc, curr) => ({
+          revenue: acc.revenue + curr.revenue,
+          bookingCount: acc.bookingCount + curr.bookings
+        }),
+        { revenue: 0, bookingCount: 0 }
+      );
+
+      setStatistics(totalStats);
+    } catch (err) {
+      console.error('Failed to fetch statistics:', err);
+    }
+  };
+
+  const handleDateChange = (type, value) => {
+    setDateRange(prev => ({
+      ...prev,
+      [type]: value
+    }));
+  };
 
   const handleLogout = () => {
     setToken(null);
@@ -322,18 +396,7 @@ export default function ProviderDashboard() {
                   My Bookings
                 </a>
               </li>
-              <li>
-                <a
-                  href="#"
-                  onClick={() => setSelectedMenu('account')}
-                  className={`flex items-center gap-3 text-sm text-gray-800 px-2.5 py-2 rounded-lg hover:bg-gray-100 ${
-                    selectedMenu === 'account' ? 'bg-gray-100' : ''
-                  }`}
-                >
-                  <User className="w-4 h-4" />
-                  Account
-                </a>
-              </li>
+              
               <li>
                 <a
                   href="#"
@@ -376,11 +439,95 @@ export default function ProviderDashboard() {
 
       {/* Main Content */}
       <div className="w-full pt-10 px-4 sm:px-6 md:px-8 lg:ps-64">
-        {selectedMenu === 'dashboard' && (
-          <h1 className="text-2xl font-bold text-gray-800">
-            Welcome to Provider Dashboard
-          </h1>
-        )}
+      {selectedMenu === 'dashboard' && (
+        <div className="space-y-6 ml-5">
+          {/* FILTER BAR */}
+          <div className="flex justify-between flex-wrap gap-4 items-end">
+            {/* Left: Filters */}
+            <div className="flex flex-wrap gap-6">
+              {/* Start Date */}
+              <div className="flex flex-col">
+                <label htmlFor="start-date" className="text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  id="start-date"
+                  value={dateRange.start}
+                  onChange={(e) => handleDateChange('start', e.target.value)}
+                  className="border border-gray-300 rounded-md p-2 shadow-sm text-sm w-44"
+                />
+              </div>
+
+              {/* End Date */}
+              <div className="flex flex-col">
+                <label htmlFor="end-date" className="text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input
+                  type="date"
+                  id="end-date"
+                  value={dateRange.end}
+                  onChange={(e) => handleDateChange('end', e.target.value)}
+                  className="border border-gray-300 rounded-md p-2 shadow-sm text-sm w-44"
+                />
+              </div>
+
+              {/* Service Select */}
+              <div className="flex flex-col">
+                <label htmlFor="service-select" className="text-sm font-medium text-gray-700 mb-1">Service</label>
+                <select
+                  id="service-select"
+                  value={selectedServiceId}
+                  onChange={(e) => setSelectedServiceId(e.target.value)}
+                  className="border border-gray-300 rounded-md p-2 shadow-sm text-sm w-44"
+                >
+                  <option value="all">All Services</option>
+                  {listings.map((listing) => (
+                    <option key={listing.serviceListingId} value={listing.serviceListingId}>
+                      {listing.serviceName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Right: Button */}
+            <div>
+              <button
+                onClick={fetchStatistics}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 shadow"
+              >
+                Get Stats
+              </button>
+            </div>
+          </div>
+
+
+        
+          {/* STAT CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Total Revenue</h3>
+                <span className="bg-green-100 text-green-700 p-2 rounded-lg">
+                  <DollarSign className="w-6 h-6" />
+                </span>
+              </div>
+              <p className="mt-4 text-3xl font-bold text-gray-900">${statistics.revenue.toFixed(2)}</p>
+              <p className="text-sm text-gray-500 mt-1">Revenue for selected period</p>
+            </div>
+        
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Total Bookings</h3>
+                <span className="bg-blue-100 text-blue-700 p-2 rounded-lg">
+                  <Calendar className="w-6 h-6" />
+                </span>
+              </div>
+              <p className="mt-4 text-3xl font-bold text-gray-900">{statistics.bookingCount}</p>
+              <p className="text-sm text-gray-500 mt-1">Bookings for selected period</p>
+            </div>
+          </div>
+        </div>
+      )}
+
 
         {selectedMenu === 'listings' && (
           <div className="p-4 sm:p-6 lg:p-8">
@@ -483,4 +630,9 @@ export default function ProviderDashboard() {
     </div>
   );
 }
+
+
+  
+
+  
 

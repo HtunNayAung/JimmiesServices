@@ -62,7 +62,9 @@ export default function BookingsTab({ token, isProvider, onChat }) {
             };
           }).filter(Boolean);
 
-          setBookings(enriched);
+          // Sort bookings when they're first set
+          const sortedBookings = enriched.sort((a, b) => new Date(b.localDate) - new Date(a.localDate));
+          setBookings(sortedBookings);
         } else {
           const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/booking/customer`, {
             headers: { 'X-LOGIN-TOKEN': token }
@@ -140,11 +142,10 @@ export default function BookingsTab({ token, isProvider, onChat }) {
         return status;
     }
   };
-  const filteredBookings = activeTab === 'ALL' 
-    ? [...bookings].sort((a, b) => new Date(a.localDate) - new Date(b.localDate))
-    : [...bookings]
-        .filter(b => b.status === activeTab)
-        .sort((a, b) => new Date(b.localDate) - new Date(a.localDate));
+  // Update the filtered bookings logic
+  const filteredBookings = activeTab === 'ALL'
+    ? bookings
+    : bookings.filter(b => b.status === activeTab);
   
   return (
     <div className="max-w-5xl mx-auto p-6">
