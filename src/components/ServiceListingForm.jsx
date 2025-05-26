@@ -9,29 +9,21 @@ export default function ServiceListingForm({
 }) {
   const [timeErrors, setTimeErrors] = useState({});
 
-  const validateTime = (day, start, end) => {
-    const errors = {};
-    
-    // If start time is set, end time must be set
-    if (start && !end) {
-      errors[day] = 'End time is required when start time is set';
-    }
-    // If end time is set, start time must be set
-    else if (!start && end) {
-      errors[day] = 'Start time is required when end time is set';
-    }
-    // If both are set, end must be later than start
-    else if (start && end && start >= end) {
-      errors[day] = 'End time must be later than start time';
-    }
+    const validateTime = (day, start, end) => {
+        let error;
+        if (start && !end)       error = 'End time is required when start time is set';
+        else if (!start && end)  error = 'Start time is required when end time is set';
+        else if (start && end && start >= end)
+            error = 'End time must be later than start time';
 
-    setTimeErrors(prev => ({
-      ...prev,
-      [day]: errors[day]
-    }));
-
-    return !errors[day];
-  };
+        setTimeErrors(prev => {
+            const next = { ...prev };
+            if (error) next[day] = error;
+            else       delete next[day];
+            return next;
+        });
+        return !error;
+    };
 
   const handleTimeChange = (day, field, value) => {
     const updatedTime = {
@@ -49,6 +41,8 @@ export default function ServiceListingForm({
       }
     }));
   };
+
+
 
   return (
     <div className="mt-8 border rounded-lg p-6 shadow-sm bg-white space-y-6">
@@ -131,15 +125,17 @@ export default function ServiceListingForm({
       <div className="flex gap-4">
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          onClick={(e) => {
+          onClick={
+
+            (e) => {
+
             e.preventDefault();
             const hasErrors = Object.entries(formData.availability).some(([day, time]) => {
               return !validateTime(day, time.start, time.end);
             });
             if (!hasErrors) {
               onSubmit();
-            }
-          }}
+            }}}
           disabled={isSubmitting || Object.keys(timeErrors).length > 0}
         >
           {isSubmitting ? 'Creating...' : 'Create Listing'}
