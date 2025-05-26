@@ -93,8 +93,6 @@ export default function ProviderDashboard() {
       return;
     }
   
-    
-  
     // Format availability
     const filteredAvailability = Object.entries(newListing.availability).reduce(
       (acc, [day, time]) => {
@@ -203,6 +201,32 @@ export default function ProviderDashboard() {
       console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (serviceListingId) => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/serviceListings/delete?serviceListingId=${serviceListingId}`,
+        {
+          headers: {
+            'X-LOGIN-TOKEN': token,
+          },
+        }
+      );
+  
+      // Refresh listings after successful deletion
+      const refreshed = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/serviceListingsGets/provider`,
+        {
+          headers: { 'X-LOGIN-TOKEN': token },
+        }
+      );
+  
+      setListings(refreshed.data);
+      setSelectedListing(null);
+    } catch (err) {
+      console.error('Delete error:', err);
     }
   };
 
@@ -435,8 +459,6 @@ export default function ProviderDashboard() {
                 onSubmit={handleFormSubmit}
                 onCancel={() => {
                   setShowForm(false);
-                  setEditMode(false);
-                  setEditingListingId(null);
                 }}
                 editMode={false}
               />

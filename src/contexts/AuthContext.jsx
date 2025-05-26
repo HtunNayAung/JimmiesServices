@@ -18,7 +18,7 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     const savedToken = getCookie('loginToken');
-    console.log('🧠 Restoring token from cookie:', savedToken);
+   
     if (savedToken) {
       setTokenState(savedToken);
     }
