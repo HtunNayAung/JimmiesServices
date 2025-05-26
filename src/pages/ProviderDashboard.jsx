@@ -503,15 +503,21 @@ export default function ProviderDashboard() {
         
           {/* STAT CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-700">Total Revenue</h3>
                 <span className="bg-green-100 text-green-700 p-2 rounded-lg">
                   <DollarSign className="w-6 h-6" />
                 </span>
               </div>
+
+
+
               <p className="mt-4 text-3xl font-bold text-gray-900">${statistics.revenue.toFixed(2)}</p>
               <p className="text-sm text-gray-500 mt-1">Revenue for selected period</p>
+
             </div>
         
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">

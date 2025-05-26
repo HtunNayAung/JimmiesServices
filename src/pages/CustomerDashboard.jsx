@@ -20,7 +20,7 @@ import ChatTab from '../components/ChatTab';
 export default function CustomerDashboard() {
     const { token, setToken } = useAuth();
     const username = token?.split('|')[0];
-    const [selectedMenu, setSelectedMenu] = useState('dashboard');
+    const [selectedMenu, setSelectedMenu] = useState('search');
     const [searchQuery, setSearchQuery] = useState('');
     const [listings, setListings] = useState([]);
     const [filteredListings, setFilteredListings] = useState([]);
@@ -132,11 +132,7 @@ export default function CustomerDashboard() {
   
           <nav className="flex-1 overflow-y-auto px-3">
             <ul className="space-y-2">
-              <li>
-                <button onClick={() => setSelectedMenu('dashboard')} className={`flex items-center gap-3 text-sm text-gray-800 px-2.5 py-2 rounded-lg hover:bg-gray-100 w-full text-left ${selectedMenu === 'dashboard' ? 'bg-gray-100' : ''}`}>
-                  <Home className="w-4 h-4" /> Dashboard
-                </button>
-              </li>
+
               <li>
                 <button onClick={() => setSelectedMenu('search')} className={`flex items-center gap-3 text-sm text-gray-800 px-2.5 py-2 rounded-lg hover:bg-gray-100 w-full text-left ${selectedMenu === 'search' ? 'bg-gray-100' : ''}`}>
                   <Search className="w-4 h-4" /> Search Services
