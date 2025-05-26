@@ -68,6 +68,26 @@ export default function BookingDetails({ booking, isProvider, token, onStatusCha
     }
   };
 
+  const handleCancel = async () => {
+    try {
+      setUpdating(true);
+      setError(null);
+      const bookingId = booking.id; // or wherever you get booking ID from
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/booking/cancel/${bookingId}`, {
+        headers: {
+          'X-LOGIN-TOKEN': token, // token should be passed into your component
+        },
+      });
+      console.log('Booking cancelled successfully');
+    } catch (error) {
+      console.error('Failed to cancel booking:', error.response?.data?.message || error.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  
+
   const validateForm = () => {
     const errors = {};
     const currentDate = new Date();
@@ -330,7 +350,7 @@ export default function BookingDetails({ booking, isProvider, token, onStatusCha
                 {booking.status === 'CONFIRMED_UNPAID' && (
                   <button
                     disabled={updating}
-                    onClick={() => handleStatusChange('CANCELLED')}
+                    onClick={handleCancel}
                     className={`px-5 py-2.5 rounded-lg text-sm font-medium transition shadow ${
                       updating ? 'bg-gray-200 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-red-600 hover:text-red-800'
                     }`}
