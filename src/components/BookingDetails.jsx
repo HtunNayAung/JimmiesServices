@@ -337,7 +337,7 @@ export default function BookingDetails({ booking, isProvider, token, onStatusCha
                     </button>
                     <button
                       disabled={updating}
-                      onClick={() => handleStatusChange('CANCELLED')}
+                      onClick={handleCancel}
                       className={`px-5 py-2.5 rounded-lg text-sm font-medium transition shadow ${
                         updating ? 'bg-gray-200 text-gray-600 cursor-not-allowed' : 'bg-gray-200 text-red-600 hover:text-red-800'
                       }`}
