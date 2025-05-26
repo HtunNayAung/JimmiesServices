@@ -29,6 +29,46 @@ function Signup({ provider = false }) {
     setError('');
     setLoading(true);
 
+    // ----- client‑side validation (same rules as backend) -----
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+
+    if (!formData.name.trim()) {
+      setError('Name must not be empty');
+      setLoading(false);
+      return;
+    }
+
+    if (!emailRegex.test(formData.email)) {
+      setError('Email is invalid');
+      setLoading(false);
+      return;
+    }
+
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      setError('Phone number is invalid');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.address.trim()) {
+      setError('Address must not be empty');
+      setLoading(false);
+      return;
+    }
+
+    if (
+      !formData.password ||
+      formData.password.length < 8 ||
+      !/[A-Z]/.test(formData.password) ||
+      !/[0-9]/.test(formData.password)
+    ) {
+      setError('Password must be at least 8 characters long, contain an uppercase letter and a number');
+      setLoading(false);
+      return;
+    }
+    // ----- end validation -----
+
     try {
         const endpoint = provider ? '/auth/signup/serviceProvider' : '/auth/signup/customer';
       
