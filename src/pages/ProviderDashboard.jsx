@@ -138,7 +138,6 @@ export default function ProviderDashboard() {
   
       setListings(refreshed.data);
       setShowForm(false);
-      setEditingListingId(null);
       setSelectedListing(null);
   
       // ✅ Reset form
@@ -205,6 +204,13 @@ export default function ProviderDashboard() {
   };
 
   const handleDelete = async (serviceListingId) => {
+    // Show confirmation dialog
+    const isConfirmed = window.confirm('Are you sure you want to delete this service listing? This action cannot be undone.');
+    
+    if (!isConfirmed) {
+      return; // Exit if user cancels
+    }
+
     try {
       await axios.delete(
         `${import.meta.env.VITE_API_BASE_URL}/serviceListings/delete?serviceListingId=${serviceListingId}`,
@@ -214,7 +220,7 @@ export default function ProviderDashboard() {
           },
         }
       );
-  
+    
       // Refresh listings after successful deletion
       const refreshed = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/serviceListingsGets/provider`,
@@ -222,7 +228,7 @@ export default function ProviderDashboard() {
           headers: { 'X-LOGIN-TOKEN': token },
         }
       );
-  
+    
       setListings(refreshed.data);
       setSelectedListing(null);
     } catch (err) {

@@ -51,13 +51,15 @@ export default function ListingDetails({ listing, isProvider, onEdit, onDelete, 
     }
   };
 
+  const [averageRating, setAverageRating] = useState(0);
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchReviews = async () => {
       if (listing?.serviceListingId) {
         try {
-          const response = await axios.get(
+          // Fetch reviews
+          const reviewsResponse = await axios.get(
             `${import.meta.env.VITE_API_BASE_URL}/reviews?serviceListingId=${listing.serviceListingId}`,
             {
               headers: { 
@@ -65,9 +67,20 @@ export default function ListingDetails({ listing, isProvider, onEdit, onDelete, 
               }
             }
           );
-          setReviews(response.data);
+          setReviews(reviewsResponse.data);
+
+          // Fetch average rating
+          const ratingResponse = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/reviews/rates?ServiceListingId=${listing.serviceListingId}`,
+            {
+              headers: { 
+                'Accept': 'application/json'
+              }
+            }
+          );
+          setAverageRating(ratingResponse.data);
         } catch (err) {
-          console.error('Error fetching reviews:', err);
+          console.error('Error fetching reviews and rating:', err);
         }
       }
     };
@@ -95,9 +108,9 @@ export default function ListingDetails({ listing, isProvider, onEdit, onDelete, 
             </>
           )}
           <div className="flex items-center gap-1 mt-2">
-            {renderStars(listing.averageRating || 0)}
+            {renderStars(averageRating || 0)}
             <span className="text-sm text-gray-600 ml-2">
-              {listing.averageRating ? `${listing.averageRating.toFixed(1)} / 5` : 'No ratings yet'}
+              {averageRating ? `${averageRating.toFixed(1)} / 5` : 'No ratings yet'}
             </span>
           </div>
         </div>
@@ -172,7 +185,7 @@ export default function ListingDetails({ listing, isProvider, onEdit, onDelete, 
           {reviews.map((review, index) => (
             <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
               <div className="flex justify-between items-center mb-1">
-                <p className="font-medium text-gray-800">{review.reviewerName}</p>
+                <p className="font-medium text-gray-800">Anonymous</p>
                 <div className="flex items-center gap-1">{renderStars(review.rating)}</div>
               </div>
               <p className="text-sm text-gray-700">{review.comment}</p>
