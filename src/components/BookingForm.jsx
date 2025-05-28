@@ -1,4 +1,11 @@
+
 import React, { useState } from 'react';
+
+// Utility: convert "HH:mm" formatted string to minutes since midnight
+function toMinutes(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
 
 export default function BookingForm({ listing, onConfirm, onCancel, isConfirming, error: serverError }) {
   const [date, setDate] = useState('');
@@ -25,12 +32,15 @@ export default function BookingForm({ listing, onConfirm, onCancel, isConfirming
       return;
     }
 
-    if (start >= end) {
+    if (toMinutes(start) >= toMinutes(end)) {
       setValidationError('Start time must be earlier than end time.');
       return;
     }
 
-    if (start < availableDay.start || end > availableDay.end) {
+    if (
+      toMinutes(start) < toMinutes(availableDay.start) ||
+      toMinutes(end)   > toMinutes(availableDay.end)
+    ) {
       setValidationError(
         `Selected time must be within available hours: ${availableDay.start} – ${availableDay.end}`
       );
